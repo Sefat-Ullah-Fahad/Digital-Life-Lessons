@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
 const AddLesson = () => {
   const { user } = useContext(AuthContext);
   
-  // ধরি ইউজারের প্রিমিয়াম স্ট্যাটাস চেক করার জন্য একটি স্টেট আছে (পরবর্তীতে ডাটাবেস থেকে আসবে)
+  // পরবর্তীতে ডাটাবেস থেকে ইউজারের স্ট্যাটাস চেক করে এটি আপডেট করা হবে
   const [isPremiumUser, setIsPremiumUser] = useState(false); 
 
   const handleAddLesson = (e) => {
@@ -23,7 +23,7 @@ const AddLesson = () => {
     const emotionalTone = form.emotionalTone.value;
     const privacy = form.privacy.value;
     const accessLevel = form.accessLevel.value;
-    const image = form.image.value; // Optional Image
+    const image = form.image.value;
 
     const newLesson = {
       title,
@@ -41,23 +41,43 @@ const AddLesson = () => {
       favoritesCount: 0
     };
 
-    console.log(newLesson);
-    
-    // API Call here...
-    Swal.fire({
-      title: 'Lesson Created!',
-      text: 'Your wisdom has been shared successfully.',
-      icon: 'success',
-      confirmButtonColor: '#4F46E5',
+    // --- ব্যাকএন্ডে ডাটা পাঠানোর লজিক (নতুন অংশ) ---
+    fetch('http://localhost:3000/lessons', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(newLesson)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.insertedId) {
+        // সফলভাবে সেভ হলে
+        Swal.fire({
+          title: 'Lesson Created!',
+          text: 'Your wisdom has been shared successfully in our database.',
+          icon: 'success',
+          confirmButtonColor: '#4F46E5',
+        });
+        form.reset(); // ফর্ম ক্লিয়ার করা
+      }
+    })
+    .catch(error => {
+      console.error('Error adding lesson:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to add lesson. Is the server running?',
+        icon: 'error',
+      });
     });
-    form.reset();
+    // --- ব্যাকএন্ড লজিক শেষ ---
   };
 
   return (
     <div className="max-w-4xl mx-auto pb-10">
       <div className="mb-8">
         <h2 className="text-3xl font-black text-gray-800 tracking-tight">Add New Life Lesson</h2>
-        <p className="text-gray-500 font-medium mt-1">আপনার জীবনের অভিজ্ঞতা অন্যদের সাথে শেয়ার করুন।</p>
+        <p className="text-gray-500 font-medium mt-1">আপনার জীবনের অভিজ্ঞতা অন্যদের সাথে শেয়ার করুন।</p>
       </div>
 
       <form onSubmit={handleAddLesson} className="space-y-6">
@@ -71,13 +91,13 @@ const AddLesson = () => {
               <Book className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500" size={18} />
               <input 
                 type="text" name="title" required
-                placeholder="একটি আকর্ষণীয় শিরোনাম দিন..."
+                placeholder="একটি আকর্ষণীয় শিরোনাম দিন..."
                 className="w-full pl-12 pr-5 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-100 outline-none font-bold"
               />
             </div>
           </div>
 
-          {/* ২. ক্যাটাগরি এবং ইমোশনাল টোন */}
+          {/* ২. ক্যাটাগরি এবং ইমোショナル টোন */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-black text-gray-700 uppercase tracking-wider ml-1">Category</label>
@@ -130,7 +150,6 @@ const AddLesson = () => {
         {/* ৫. সেটিংস কার্ড (Privacy & Access) */}
         <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* Privacy Dropdown */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Globe size={18} className="text-indigo-600" />
@@ -142,7 +161,6 @@ const AddLesson = () => {
             </select>
           </div>
 
-          {/* Access Level Dropdown with Logic */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

@@ -1,39 +1,47 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Lock, User, Clock, Tag, Smile, ArrowRight, Star, Filter, BookOpen, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AllLessons = () => {
-  // ১. ১০টি ডামি লেসন ডাটা (Requirement অনুযায়ী)
-  const [lessons] = useState([
-    { id: 1, title: "The Art of Saying No", desc: "কিভাবে নিজের সীমানা নির্ধারণ করতে হয় এবং মানসিক শান্তি বজায় রাখতে হয়...", category: "Personal Growth", tone: "Realization", author: "Alif Ahmed", authorImg: "https://i.pravatar.cc/150?u=1", date: "Oct 20, 2025", accessLevel: "public" },
-    { id: 2, title: "Wealth Management Secrets", desc: "আর্থিক স্বাধীনতা অর্জনের জন্য জমানোর চেয়ে সঠিক বিনিয়োগ বেশি জরুরি...", category: "Finance", tone: "Motivational", author: "Sarah Kabir", authorImg: "https://i.pravatar.cc/150?u=2", date: "Oct 22, 2025", accessLevel: "premium" },
-    { id: 3, title: "Career Switch at 30", desc: "ত্রিশ বছর বয়সে নতুন ক্যারিয়ার শুরু করার ঝুঁকি ও সম্ভাবনা নিয়ে বাস্তব অভিজ্ঞতা...", category: "Career", tone: "Realization", author: "Rakibul Islam", authorImg: "https://i.pravatar.cc/150?u=3", date: "Oct 25, 2025", accessLevel: "public" },
-    { id: 4, title: "Mindfulness in Digital Age", desc: "সোশ্যাল মিডিয়া এবং ইন্টারনেটের ভিড়ে কিভাবে নিজের ফোকাস ধরে রাখবেন...", category: "Mindset", tone: "Gratitude", author: "Dr. Nabila", authorImg: "https://i.pravatar.cc/150?u=4", date: "Nov 02, 2025", accessLevel: "public" },
-    { id: 5, title: "Startup Failures to Success", desc: "আমার প্রথম স্টার্টআপ কেন ব্যর্থ হয়েছিল এবং সেখান থেকে আমি কী শিখেছি...", category: "Business", tone: "Motivational", author: "Siam Hossain", authorImg: "https://i.pravatar.cc/150?u=5", date: "Nov 05, 2025", accessLevel: "premium" },
-    { id: 6, title: "Healthy Eating on a Budget", desc: "অল্প খরচে কিভাবে পুষ্টিকর খাবার নিশ্চিত করবেন এবং সুস্থ থাকবেন...", category: "Health", tone: "Educational", author: "Nutri Saima", authorImg: "https://i.pravatar.cc/150?u=6", date: "Nov 10, 2025", accessLevel: "public" },
-    { id: 7, title: "React Development Roadmap", desc: "একজন ফুলস্ট্যাক ডেভেলপার হওয়ার সঠিক গাইডলাইন এবং টিপস...", category: "Career", tone: "Educational", author: "Dev Ariful", authorImg: "https://i.pravatar.cc/150?u=7", date: "Nov 12, 2025", accessLevel: "premium" },
-    { id: 8, title: "Power of Emotional Intelligence", desc: "বুদ্ধিমত্তার চেয়ে ইমোশনাল ইন্টেলিজেন্স কেন বেশি জরুরি...", category: "Personal Growth", tone: "Realization", author: "Mitu Zaman", authorImg: "https://i.pravatar.cc/150?u=8", date: "Nov 15, 2025", accessLevel: "public" },
-    { id: 9, title: "Handling Relationship Conflict", desc: "যেকোনো ঝগড়াকে কিভাবে সুন্দরভাবে সমাধান করে সম্পর্ক মজবুত করা যায়...", category: "Relationships", tone: "Sad", author: "Rony Khan", authorImg: "https://i.pravatar.cc/150?u=9", date: "Nov 18, 2025", accessLevel: "public" },
-    { id: 10, title: "Minimalist Life Benefits", desc: "কম জিনিসে বেশি সুখে থাকার আধুনিক জীবনব্যবস্থা...", category: "Mindset", tone: "Motivational", author: "Asif Iqbal", authorImg: "https://i.pravatar.cc/150?u=10", date: "Nov 20, 2025", accessLevel: "premium" },
-  ]);
-
-  // ২. ফিল্টার স্টেট
+  // ১. ডাটাবেস থেকে আসা লেসন সেভ করার জন্য স্টেট
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  
-  // এই ভেরিয়েবলটি পরে Firebase/Context থেকে আসবে
+
+  // এই ভেরিয়েবলটি পরে ইউজারের প্রোফাইল/রোল থেকে আসবে
   const isCurrentUserPremium = false; 
 
-  // ৩. ফিল্টার লজিক
+  // ২. ডাটাবেস থেকে সব লেসন নিয়ে আসা (শুধুমাত্র Public গুলো)
+  useEffect(() => {
+    fetch('http://localhost:3000/lessons')
+      .then(res => res.json())
+      .then(data => {
+        // শুধুমাত্র যেগুলোর privacy "Public", সেগুলো ফিল্টার করে নিচ্ছি
+        const publicLessons = data.filter(lesson => lesson.privacy === "Public" || lesson.privacy === undefined);
+        setLessons(publicLessons);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error loading lessons:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // ৩. ফিল্টার লজিক (Search & Category)
   const filteredLessons = useMemo(() => {
     return lessons.filter((lesson) => {
       const matchesSearch = 
-        lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        lesson.category.toLowerCase().includes(searchTerm.toLowerCase());
+        lesson.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        lesson.category?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === "All" || lesson.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
   }, [searchTerm, selectedCategory, lessons]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center font-black text-indigo-600 italic">Wisdom is Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -70,7 +78,7 @@ const AllLessons = () => {
                 <option value="Finance">Finance</option>
                 <option value="Career">Career</option>
                 <option value="Mindset">Mindset</option>
-                <option value="Business">Business</option>
+                <option value="Relationships">Relationships</option>
               </select>
             </div>
           </div>
@@ -84,12 +92,12 @@ const AllLessons = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {filteredLessons.map((lesson) => (
                 <div 
-                  key={lesson.id} 
+                  key={lesson._id} 
                   className="group relative bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-100 transition-all duration-500 flex flex-col min-h-[500px]"
                 >
                   
-                  {/* ⭐ Requirement: Premium Blur Logic ⭐ */}
-                  {lesson.accessLevel === 'premium' && !isCurrentUserPremium && (
+                  {/* ⭐ Premium Blur Logic ⭐ */}
+                  {lesson.accessLevel === 'Premium' && !isCurrentUserPremium && (
                     <div className="absolute inset-2 z-20 bg-white/70 backdrop-blur-md rounded-[2.3rem] flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-indigo-200">
                       <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 rotate-6 shadow-xl">
                         <Lock size={28} />
@@ -110,7 +118,7 @@ const AllLessons = () => {
                         <Tag size={12} /> {lesson.category}
                       </span>
                       <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1">
-                        <Smile size={12} /> {lesson.tone}
+                        <Smile size={12} /> {lesson.emotionalTone || "Realization"}
                       </span>
                     </div>
 
@@ -119,27 +127,26 @@ const AllLessons = () => {
                       {lesson.title}
                     </h3>
                     <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3">
-                      {lesson.desc}
+                      {lesson.description}
                     </p>
 
                     {/* Bottom Info Section */}
                     <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <img src={lesson.authorImg} alt={lesson.author} className="w-10 h-10 rounded-full border-2 border-indigo-100 shadow-sm" />
+                          <img src={lesson.authorPhoto || "https://i.pravatar.cc/150"} alt={lesson.authorName} className="w-10 h-10 rounded-full border-2 border-indigo-100 shadow-sm" />
                           <div className="absolute -bottom-1 -right-1 bg-blue-500 w-3.5 h-3.5 rounded-full border-2 border-white"></div>
                         </div>
                         <div>
-                          <p className="text-sm font-black text-slate-800 tracking-tight">{lesson.author}</p>
+                          <p className="text-sm font-black text-slate-800 tracking-tight">{lesson.authorName || "Anonymous"}</p>
                           <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase">
-                            <Calendar size={10} /> {lesson.date}
+                            <Calendar size={10} /> {new Date(lesson.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
 
-                      {/* Detail Button */}
                       <Link 
-                        to={`/lesson/${lesson.id}`} 
+                        to={`/lesson/${lesson._id}`} 
                         className="p-3 bg-slate-50 rounded-2xl text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                       >
                         <ArrowRight size={20} />
@@ -156,7 +163,6 @@ const AllLessons = () => {
                 <Search size={32} className="text-slate-300" />
               </div>
               <h2 className="text-2xl font-bold text-slate-400 italic">No lessons found matching your criteria.</h2>
-              <button onClick={() => {setSearchTerm(""); setSelectedCategory("All")}} className="mt-4 text-indigo-600 font-bold hover:underline">Clear all filters</button>
             </div>
           )}
         </div>
