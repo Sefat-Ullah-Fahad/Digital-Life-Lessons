@@ -10,7 +10,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { router } from './routes/Routes.jsx'
+import { router } from './Routes/Routes.jsx'
 
 // ২. একটি ক্লায়েন্ট তৈরি করুন
 const queryClient = new QueryClient()
